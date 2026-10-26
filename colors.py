@@ -7,7 +7,9 @@ class Colors:
     purple = (166, 0, 247)
     cyan = (21, 204, 209)
     blue = (13, 64, 216)
+    mint = (152, 251, 152)
+    lavender = (180, 160, 255)
 
     @classmethod
     def get_cell_color(cls):
-        return [cls.dark_grey, cls.green, cls.red, cls.orange, cls.yellow, cls.purple, cls.cyan, cls.blue]
+        return [cls.dark_grey, cls.green, cls.red, cls.orange, cls.yellow, cls.purple, cls.cyan, cls.blue, cls.mint, cls.lavender]

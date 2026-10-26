@@ -1,18 +1,18 @@
 from grid import Grid
-from blocks import IBlock, JBlock, LBlock, OBlock, SBlock, TBlock
+from blocks import IBlock, JBlock, LBlock, OBlock, SBlock, TBlock, UBlock, ZBlock, XBlock
 import random
 
 class Game:
     def __init__(self):
         self.grid = Grid()
-        self.blocks = [IBlock(), JBlock(), LBlock(), OBlock(), SBlock(), TBlock()]
+        self.blocks = [IBlock(), JBlock(), LBlock(), OBlock(), SBlock(), TBlock(), UBlock(), ZBlock(), XBlock()]
         self.current_block = self.get_random_block()
         self.next_block = self.get_random_block()
         self.game_over = False
 
     def get_random_block(self):
         if len(self.blocks) == 0:
-            self.blocks = [IBlock(), JBlock(), LBlock(), OBlock(), SBlock(), TBlock()]
+            self.blocks = [IBlock(), JBlock(), LBlock(), OBlock(), SBlock(), TBlock(), UBlock(), ZBlock(), XBlock()]
 
         block = random.choice(self.blocks)
         self.blocks.remove(block)
@@ -67,6 +67,6 @@ class Game:
 
     def reset(self):
         self.grid.reset()
-        self.blocks = [IBlock(), JBlock(), LBlock(), OBlock(), SBlock(), TBlock()]
+        self.blocks = [IBlock(), JBlock(), LBlock(), OBlock(), SBlock(), TBlock(), UBlock(), ZBlock(), XBlock()]
         self.current_block = self.get_random_block()
         self.next_block = self.get_random_block()
