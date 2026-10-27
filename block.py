@@ -30,6 +30,20 @@ class Block:
             tile_rect = pygame.Rect(tile.col * self.cell_size + offset_x, tile.row * self.cell_size + offset_y, self.cell_size - 1, self.cell_size - 1)
             pygame.draw.rect(screen, self.colors[self.id], tile_rect)
 
+    def draw_centered(self, screen, center_x, center_y):
+        tiles = self.get_cell_positions()
+        min_row = min(tile.row for tile in tiles)
+        max_row = max(tile.row for tile in tiles)
+        min_col = min(tile.col for tile in tiles)
+        max_col = max(tile.col for tile in tiles)
+        width = (max_col - min_col + 1) * self.cell_size
+        height = (max_row - min_row + 1) * self.cell_size
+        start_x = center_x - width // 2
+        start_y = center_y - height // 2
+        for tile in tiles:
+            tile_rect = pygame.Rect((tile.col - min_col) * self.cell_size + start_x, (tile.row - min_row) * self.cell_size + start_y, self.cell_size - 1, self.cell_size - 1)
+            pygame.draw.rect(screen, self.colors[self.id], tile_rect)
+
     def rotate(self):
         self.rotation_state +=1
         if self.rotation_state == len(self.cells):

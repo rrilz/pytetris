@@ -6,15 +6,19 @@ import random
 
 
 class Game:
-    def __init__(self):
+    def __init__(self, music_on, sound_on):
+        self.sound_on = sound_on
         self.grid = Grid()
         self.blocks = [IBlock(), JBlock(), LBlock(), OBlock(), SBlock(), TBlock(), UBlock(), ZBlock(), XBlock()]
         self.current_block = self.get_random_block()
         self.next_block = self.get_random_block()
         self.game_over = False
         self.score = 0
-        pygame.mixer.music.load("Тетрис.mp3")
-        pygame.mixer.music.play(-1)
+        if music_on:
+            pygame.mixer.music.load("Тетрис.mp3")
+            pygame.mixer.music.play(-1)
+        self.rotate_sound = pygame.mixer.Sound("rotate.ogg")
+        self.clear_row_sound = pygame.mixer.Sound("clear.ogg")
 
     def update_score(self, lines_cleared, move_down_points):
         if lines_cleared == 1:
@@ -56,7 +60,10 @@ class Game:
         self.current_block = self.next_block
         self.next_block = self.get_random_block()
         rows_cleared = self.grid.clear_full_rows()
-        self.update_score(rows_cleared, 0)
+        if rows_cleared > 0:
+            if self.sound_on:
+                self.clear_row_sound.play()
+            self.update_score(rows_cleared, 0)
         if self.block_fits() == False:
             self.game_over = True
 
@@ -80,6 +87,8 @@ class Game:
         for dr, dc in kicks:
             self.current_block.move(dr, dc)
             if self.block_inside() and self.block_fits():
+                if self.sound_on:
+                    self.rotate_sound.play()
                 return
             self.current_block.move(-dr, -dc)
 
@@ -96,13 +105,7 @@ class Game:
         self.grid.draw(screen)
         if not self.game_over:
             self.current_block.draw(screen, 11, 11)
-
-        if self.next_block.id == 3:
-            self.next_block.draw(screen, 255, 290)
-        elif self.next_block.id == 4:
-            self.next_block.draw(screen, 255, 280)
-        else:
-            self.next_block.draw(screen, 270, 270)
+        self.next_block.draw_centered(screen, 405, 340)
 
     def reset(self):
         self.grid.reset()
