@@ -49,9 +49,22 @@ class Game:
             self.current_block.move(0, -1)
     def move_down(self):
         self.current_block.move(1, 0)
-        if self.block_inside() == False or self.block_fits() == False:
+        if not self.block_inside() or not self.block_fits():
             self.current_block.move(-1, 0)
             self.lock_block()
+            return False
+        return True
+    def hard_drop(self):
+        distance = 0
+
+        while True:
+            self.current_block.move(1, 0)
+            if not self.block_inside() or not self.block_fits():
+                self.current_block.move(-1, 0)
+                break
+            distance += 1
+        self.update_score(0, distance*2)
+        self.lock_block()
 
     def lock_block(self):
         tiles = self.current_block.get_cell_positions()
@@ -64,7 +77,7 @@ class Game:
             if self.sound_on:
                 self.clear_row_sound.play()
             self.update_score(rows_cleared, 0)
-        if self.block_fits() == False:
+        if not self.block_inside() or not self.block_fits():
             self.game_over = True
 
     def block_inside(self):

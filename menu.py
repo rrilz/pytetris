@@ -5,76 +5,185 @@ from blocks import IBlock, JBlock, LBlock, OBlock, SBlock, TBlock, UBlock, ZBloc
 
 class Menu:
     def __init__(self):
-        self.music_on = True
-        self.sound_on = True
-        self.rotations = 0
+        self.music_volume = 0.5
+        self.sound_volume = 0.7
+
+        self.background = Colors.background
+        self.panel = Colors.panel
+        self.panel_light = Colors.panel_light
+        self.text_color = Colors.text
+        self.muted_text = Colors.muted_text
+        self.accent = Colors.accent
+        self.accent_hover = Colors.accent_hover
+
+        self.title_font = pygame.font.SysFont("consolas", 64, bold=True)
+        self.subtitle_font = pygame.font.SysFont("segoeui", 18)
+        self.button_font = pygame.font.SysFont("segoeui", 25, bold=True)
+        self.text_font = pygame.font.SysFont("segoeui", 19)
+        self.small_font = pygame.font.SysFont("segoeui", 15)
+
+        self.play_rect = pygame.Rect(125, 340, 250, 55)
+        self.settings_rect = pygame.Rect(125, 410, 250, 55)
+        self.exit_rect = pygame.Rect(125, 480, 250, 55)
+
+        self.back_rect = pygame.Rect(125, 500, 250, 50)
+
+        self.music_slider = pygame.Rect(150, 250, 200, 8)
+        self.sound_slider = pygame.Rect(150, 355, 200, 8)
+
         self.blocks = []
+        self.rotations = 0
         self.change_blocks()
-
-        title_font = pygame.font.SysFont("segoeui,trebuchetms,verdana,arial", 80, bold=True)
-        text_font = pygame.font.SysFont("segoeui,trebuchetms,verdana,arial", 32, bold=True)
-        title_colors = [Colors.red, Colors.orange, Colors.yellow, Colors.green, Colors.cyan, Colors.purple]
-        self.title_surfaces = []
-        for i, letter in enumerate("ТЕТРИС"):
-            self.title_surfaces.append(title_font.render(letter, True, title_colors[i]))
-        self.start_surface = text_font.render("Начать игру", True, Colors.white)
-        self.music_surface = text_font.render("Включить музыку", True, Colors.white)
-        self.sound_surface = text_font.render("Включить звуки", True, Colors.white)
-
-        self.start_rect = pygame.Rect(130, 330, 240, 70)
-        self.music_rect = pygame.Rect(70, 450, 32, 32)
-        self.sound_rect = pygame.Rect(70, 505, 32, 32)
 
         self.play_music()
 
     def change_blocks(self):
-        classes = random.sample([IBlock, JBlock, LBlock, OBlock, SBlock, TBlock, UBlock, ZBlock, XBlock], 3)
+        classes = random.sample(
+            [IBlock, JBlock, LBlock, OBlock, SBlock,
+             TBlock, UBlock, ZBlock, XBlock],
+            3
+        )
         self.blocks = [block_class() for block_class in classes]
 
     def play_music(self):
         pygame.mixer.music.stop()
-        if self.music_on == True:
+
+        if self.music_volume > 0:
             pygame.mixer.music.load("Меню.mp3")
+            pygame.mixer.music.set_volume(self.music_volume)
             pygame.mixer.music.play(-1)
 
-    def update(self):
-        self.rotations += 1
-        if self.rotations == 4:
-            self.rotations = 0
-            self.change_blocks()
+    def set_music_volume(self, value):
+        self.music_volume = max(0, min(1, value))
+
+        if self.music_volume == 0:
+            pygame.mixer.music.stop()
         else:
-            for block in self.blocks:
+            if not pygame.mixer.music.get_busy():
+                self.play_music()
+            else:
+                pygame.mixer.music.set_volume(self.music_volume)
+
+    def set_sound_volume(self, value):
+        self.sound_volume = max(0, min(1, value))
+
+    def change_volume(self, pos):
+        if self.music_slider.inflate(0, 25).collidepoint(pos):
+            value = (pos[0] - self.music_slider.x) / self.music_slider.width
+            self.set_music_volume(value)
+
+        if self.sound_slider.inflate(0, 25).collidepoint(pos):
+            value = (pos[0] - self.sound_slider.x) / self.sound_slider.width
+            self.set_sound_volume(value)
+
+    def update(self):
+        if random.random() < 0.5:
+            block = random.choice(self.blocks)
+
+            if random.choice([True, False]):
                 block.rotate()
+            else:
+                block.undo_rotate()
 
-    def click(self, pos):
-        if self.music_rect.collidepoint(pos):
-            self.music_on = not self.music_on
-            self.play_music()
+        elif random.random() < 0.4:
+            all_blocks = [
+                IBlock, JBlock, LBlock, OBlock,
+                SBlock, TBlock, UBlock, ZBlock, XBlock
+            ]
 
-    def draw_checkbox(self, screen, rect, checked, surface):
-        pygame.draw.rect(screen, Colors.light_blue, rect, 0, 6)
-        pygame.draw.rect(screen, Colors.white, rect, 2, 6)
-        if checked == True:
-            points = [(rect.x + 7, rect.y + 17), (rect.x + 14, rect.y + 24), (rect.x + 26, rect.y + 9)]
-            pygame.draw.lines(screen, Colors.mint, False, points, 4)
-        screen.blit(surface, (rect.x + 46, rect.y))
+            used = [type(block) for block in self.blocks]
+            available = [cls for cls in all_blocks if cls not in used]
 
-    def draw(self, screen):
-        screen.fill(Colors.dark_blue)
+            if available:
+                index = random.randrange(len(self.blocks))
+                self.blocks[index] = random.choice(available)()
 
-        x = 250 - sum(surface.get_width() for surface in self.title_surfaces) // 2
-        for surface in self.title_surfaces:
-            screen.blit(surface, (x, 40))
-            x += surface.get_width()
+    def click(self, pos, page):
+        if page == 'menu':
+            if self.play_rect.collidepoint(pos):
+                return 'game'
+
+            if self.settings_rect.collidepoint(pos):
+                return 'settings'
+
+            if self.exit_rect.collidepoint(pos):
+                return 'exit'
+
+        elif page == 'settings':
+            if self.back_rect.collidepoint(pos):
+                return 'menu'
+
+            self.change_volume(pos)
+
+        return None
+
+    def draw_button(self, screen, rect, text):
+        if rect.collidepoint(pygame.mouse.get_pos()):
+            color = self.accent_hover
+        else:
+            color = self.panel_light
+
+        pygame.draw.rect(screen, color, rect, border_radius=8)
+
+        surface = self.button_font.render(text, True, self.text_color)
+        screen.blit(surface, surface.get_rect(center=rect.center))
+
+    def draw_piece(self, screen, block, center_x, center_y):
+        block.draw_centered(screen, center_x, center_y)
+
+    def draw_slider(self, screen, rect, value, label):
+        label_surface = self.text_font.render(label, True, self.text_color)
+        screen.blit(label_surface, (rect.x, rect.y - 65))
+
+        pygame.draw.rect(screen, self.panel_light, rect, border_radius=5)
+
+        fill_rect = pygame.Rect(
+            rect.x, rect.y,
+            int(rect.width * value), rect.height
+        )
+        pygame.draw.rect(
+            screen, self.accent, fill_rect, border_radius=5
+        )
+
+        knob_x = rect.x + int(rect.width * value)
+        pygame.draw.circle(
+            screen, self.text_color, (knob_x, rect.centery), 9
+        )
+
+        value_surface = self.small_font.render(
+            str(int(value * 100)) + "%", True, self.muted_text
+        )
+        screen.blit(value_surface, (rect.right - 35, rect.y - 30))
+    
+    def draw_menu(self, screen):
+        screen.fill(self.background)
+
+        title = self.title_font.render("TETRIS", True, self.text_color)
+        screen.blit(title, title.get_rect(center=(250, 105)))
+
+        subtitle = self.subtitle_font.render("A little place for falling blocks", True, self.muted_text)
+        screen.blit(subtitle, subtitle.get_rect(center=(250, 155))) 
 
         for i, block in enumerate(self.blocks):
-            block.draw_centered(screen, 90 + i * 160, 230)
+            self.draw_piece(screen, block, 90 + i * 160, 250)
 
-        if self.start_rect.collidepoint(pygame.mouse.get_pos()):
-            pygame.draw.rect(screen, Colors.lavender, self.start_rect, 0, 10)
-        else:
-            pygame.draw.rect(screen, Colors.light_blue, self.start_rect, 0, 10)
-        screen.blit(self.start_surface, self.start_surface.get_rect(center = self.start_rect.center))
+        self.draw_button(screen, self.play_rect, "Играть")
+        self.draw_button(screen, self.settings_rect, "Настройки")
+        self.draw_button(screen, self.exit_rect, "Выход")    
 
-        self.draw_checkbox(screen, self.music_rect, self.music_on, self.music_surface)
-        self.draw_checkbox(screen, self.sound_rect, self.sound_on, self.sound_surface)
+    def draw_settings(self, screen):
+        screen.fill(self.background)
+
+        title = self.title_font.render("НАСТРОЙКИ", True, self.text_color)
+        screen.blit(title, title.get_rect(center=(250, 110)))
+
+        self.draw_slider(screen, self.music_slider, self.music_volume, "Громкость музыки")
+        self.draw_slider(screen, self.sound_slider, self.sound_volume, "Громкость звуков")
+        self.draw_button(screen, self.back_rect, "Назад")
+
+    def draw(self, screen, page):
+        if page == "menu":
+            self.draw_menu(screen)
+        elif page == "settings":
+            self.draw_settings(screen)
+        
