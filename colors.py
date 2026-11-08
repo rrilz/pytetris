@@ -16,6 +16,8 @@ class Colors:
     blue = (112, 143, 190)
 
     background = (37, 44, 56)
+    field = (43, 53, 68)
+    board_border = (137, 180, 194)
     panel = (53, 67, 84)
     panel_light = (67, 81, 99)
     text = (228, 214, 189)

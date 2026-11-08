@@ -16,6 +16,13 @@ class Grid:
             print()
 
     def draw(self, screen):
+        board_rect = pygame.Rect(6, 6, 310, 610)
+        pygame.draw.rect(screen, Colors.panel, board_rect, border_radius=8)
+        pygame.draw.rect(screen, Colors.board_border, board_rect, width=2, border_radius=8)
+
+        field_rect = pygame.Rect(10, 10, 302, 602)
+        pygame.draw.rect(screen, Colors.field, field_rect)
+
         for row in range(self.num_rows):
             for col in range(self.num_cols):
                 cell_value = self.grid[row][col]

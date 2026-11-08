@@ -5,7 +5,7 @@ from blocks import IBlock, JBlock, LBlock, OBlock, SBlock, TBlock, UBlock, ZBloc
 
 class Menu:
     def __init__(self):
-        self.music_volume = 0.5
+        self.music_volume = 0.3
         self.sound_volume = 0.7
 
         self.background = Colors.background
@@ -25,7 +25,6 @@ class Menu:
         self.play_rect = pygame.Rect(125, 340, 250, 55)
         self.settings_rect = pygame.Rect(125, 410, 250, 55)
         self.exit_rect = pygame.Rect(125, 480, 250, 55)
-
         self.back_rect = pygame.Rect(125, 500, 250, 50)
 
         self.music_slider = pygame.Rect(150, 250, 200, 8)
@@ -137,22 +136,13 @@ class Menu:
 
         pygame.draw.rect(screen, self.panel_light, rect, border_radius=5)
 
-        fill_rect = pygame.Rect(
-            rect.x, rect.y,
-            int(rect.width * value), rect.height
-        )
-        pygame.draw.rect(
-            screen, self.accent, fill_rect, border_radius=5
-        )
+        fill_rect = pygame.Rect(rect.x, rect.y, int(rect.width * value), rect.height)
+        pygame.draw.rect(screen, self.accent, fill_rect, border_radius=5)
 
         knob_x = rect.x + int(rect.width * value)
-        pygame.draw.circle(
-            screen, self.text_color, (knob_x, rect.centery), 9
-        )
+        pygame.draw.circle(screen, self.text_color, (knob_x, rect.centery), 9)
 
-        value_surface = self.small_font.render(
-            str(int(value * 100)) + "%", True, self.muted_text
-        )
+        value_surface = self.small_font.render(str(int(value * 100)) + "%", True, self.muted_text)
         screen.blit(value_surface, (rect.right - 35, rect.y - 30))
     
     def draw_menu(self, screen):
