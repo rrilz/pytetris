@@ -2,6 +2,7 @@ import random
 import pygame
 from colors import Colors
 from blocks import IBlock, JBlock, LBlock, OBlock, SBlock, TBlock, UBlock, ZBlock, XBlock
+from fonts import load_font
 
 class Menu:
     def __init__(self):
@@ -16,11 +17,11 @@ class Menu:
         self.accent = Colors.accent
         self.accent_hover = Colors.accent_hover
 
-        self.title_font = pygame.font.SysFont("consolas", 64, bold=True)
-        self.subtitle_font = pygame.font.SysFont("segoeui", 18)
-        self.button_font = pygame.font.SysFont("segoeui", 25, bold=True)
-        self.text_font = pygame.font.SysFont("segoeui", 19)
-        self.small_font = pygame.font.SysFont("segoeui", 15)
+        self.title_font = load_font("NotoSansMono-Bold.ttf", 64)
+        self.subtitle_font = load_font("NotoSans-Regular.ttf", 18)
+        self.button_font = load_font("NotoSans-Bold.ttf", 25)
+        self.text_font = load_font("NotoSans-Regular.ttf", 19)
+        self.small_font = load_font("NotoSans-Regular.ttf", 15)
 
         self.play_rect = pygame.Rect(125, 340, 250, 55)
         self.settings_rect = pygame.Rect(125, 410, 250, 55)
@@ -34,7 +35,6 @@ class Menu:
         self.rotations = 0
         self.change_blocks()
 
-        self.play_music()
 
     def change_blocks(self):
         classes = random.sample(
@@ -44,24 +44,9 @@ class Menu:
         )
         self.blocks = [block_class() for block_class in classes]
 
-    def play_music(self):
-        pygame.mixer.music.stop()
-
-        if self.music_volume > 0:
-            pygame.mixer.music.load("Меню.mp3")
-            pygame.mixer.music.set_volume(self.music_volume)
-            pygame.mixer.music.play(-1)
 
     def set_music_volume(self, value):
         self.music_volume = max(0, min(1, value))
-
-        if self.music_volume == 0:
-            pygame.mixer.music.stop()
-        else:
-            if not pygame.mixer.music.get_busy():
-                self.play_music()
-            else:
-                pygame.mixer.music.set_volume(self.music_volume)
 
     def set_sound_volume(self, value):
         self.sound_volume = max(0, min(1, value))

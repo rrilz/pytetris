@@ -4,18 +4,27 @@ from game import Game
 from colors import Colors
 from menu import Menu
 import math
+from fonts import load_font
+from audio import AudioManager
 
+pygame.mixer.pre_init(44100, -16, 2, 512)
 pygame.init()
 
-title_font = pygame.font.SysFont("segoeui", 40, bold=True)
-button_font = pygame.font.SysFont("segoeui", 25, bold=True)
-label_font = pygame.font.SysFont("segoeui", 22, bold=True)
+icon = pygame.image.load("assets/icon.png")
+pygame.display.set_icon(icon)
+
+title_font = load_font("NotoSans-Bold.ttf", 40)
+button_font = load_font("NotoSans-Bold.ttf", 25)
+label_font = load_font("NotoSans-Bold.ttf", 22)
+controls_font = load_font("NotoSans-Bold.ttf", 16)
+controls_small_font = load_font("NotoSans-Regular.ttf", 14)
 
 background = Colors.background
 panel = Colors.panel
 panel_light = Colors.panel_light
 text_color = Colors.text
 accent = Colors.accent
+muted_text = Colors.muted_text
 
 score_surface = label_font.render("Счёт", True, text_color)
 next_surface = label_font.render("Следующий", True, text_color)
@@ -23,6 +32,12 @@ game_over_surface = title_font.render("Игра окончена", True, text_co
 restart_surface = button_font.render("Перезапустить", True, background)
 menu_surface = button_font.render("В меню", True, background)
 lines_surface = label_font.render("Линии", True, text_color)
+controls_surface = controls_font.render("УПРАВЛЕНИЕ", True, text_color)
+move_surface = controls_small_font.render("< >   Движение", True, muted_text)
+rotate_surface = controls_small_font.render("^     Поворот", True, muted_text)
+accel_surface = controls_small_font.render("v     Ускорение", True, muted_text)
+drop_surface = controls_small_font.render("SPACE Сброс", True, muted_text)
+pause_surface = controls_small_font.render("ESC   Пауза", True, muted_text)
 
 score_rect = pygame.Rect(330, 65, 155, 65)
 next_rect = pygame.Rect(330, 275, 155, 190)
@@ -31,13 +46,18 @@ menu_rect = pygame.Rect(160, 410, 180, 60)
 lines_rect = pygame.Rect(330, 170, 155, 65)
 pause_resume_rect = pygame.Rect(110, 350, 280, 55)
 pause_menu_rect = pygame.Rect(160, 420, 180, 55)
+controls_rect = pygame.Rect(330, 478, 155, 130)
 
 screen = pygame.display.set_mode((500, 620))
 pygame.display.set_caption("Тетрис на Питоне")
 clock = pygame.time.Clock()
 
 menu = Menu()
+audio = AudioManager(menu.music_volume, menu.sound_volume)
+
+audio.play_music("menu")
 game = None
+game_over_music_started = False
 page = 'menu'
 soft_drop = False
 paused = False
@@ -66,24 +86,28 @@ while True:
 
                 if event.key == pygame.K_RETURN and page == 'menu':
                     page = 'game'
-                    game = Game(menu.music_volume > 0, menu.sound_volume > 0)
+                    game = Game(audio)
+                    audio.play_music("game")
+                    game_over_music_started = False
                     paused = False
                     last_fall_time = pygame.time.get_ticks()
-                    pygame.mixer.music.set_volume(menu.music_volume)
-                    game.rotate_sound.set_volume(menu.sound_volume)
-                    game.clear_row_sound.set_volume(menu.sound_volume)
+
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 action = menu.click(event.pos, page)
+                audio.set_music_volume(menu.music_volume)
+                audio.set_sound_volume(menu.sound_volume)
+                if action is not None:
+                    audio.play_sfx("button")
 
                 if action == 'game':
                     page = 'game'
-                    game = Game(menu.music_volume > 0, menu.sound_volume > 0)
+                    game = Game(audio)
+                    audio.play_music("game")
+                    game_over_music_started = False
                     paused = False
                     last_fall_time = pygame.time.get_ticks()
-                    pygame.mixer.music.set_volume(menu.music_volume)
-                    game.rotate_sound.set_volume(menu.sound_volume)
-                    game.clear_row_sound.set_volume(menu.sound_volume)
+
 
                 elif action == 'settings':
                     page = 'settings'
@@ -98,6 +122,8 @@ while True:
             if event.type == pygame.MOUSEMOTION:
                 if pygame.mouse.get_pressed()[0] and page == 'settings':
                     menu.change_volume(event.pos)           
+                    audio.set_music_volume(menu.music_volume)
+                    audio.set_sound_volume(menu.sound_volume)
 
             continue
 
@@ -106,26 +132,28 @@ while True:
             if event.type == pygame.KEYDOWN:
                         
                 if event.key == pygame.K_ESCAPE:
-
                     if game.game_over:
                         page = 'menu'
-                        menu.play_music()
+                        audio.play_music("menu")
                     else:
                         if not paused:
                             paused = True
                             pause_started_at = pygame.time.get_ticks()
+                            audio.pause_music()
                         else:
                             paused = False
                             pause_duration = pygame.time.get_ticks() - pause_started_at
                             last_fall_time += pause_duration
+                            audio.resume_music()
                     continue
 
                 if event.key == pygame.K_r and game.game_over:
                     game.game_over = False
                     game.reset()
                     paused = False
-                    pause_duration = pygame.time.get_ticks() - pause_started_at
-                    last_fall_time += pause_duration
+                    last_fall_time = pygame.time.get_ticks()
+                    game_over_music_started = False
+                    audio.play_music("game")
 
                 if event.key == pygame.K_LEFT and not game.game_over and not paused:
                     game.move_left()
@@ -151,26 +179,39 @@ while True:
                 if game.game_over:
 
                     if restart_rect.collidepoint(event.pos):
+                        audio.play_sfx("button")
                         game.game_over = False
                         game.reset()
                         paused = False
                         last_fall_time = pygame.time.get_ticks()
+                        game_over_music_started = False
+                        audio.play_music("game")
 
                     elif menu_rect.collidepoint(event.pos):
-                        menu.play_music()
+                        audio.play_sfx("button")
                         page = 'menu'
                         paused = False
+                        audio.play_music("menu")
 
                 elif paused:
 
                     if pause_resume_rect.collidepoint(event.pos):
+                        audio.play_sfx("button")
                         paused = False
-                        last_fall_time = pygame.time.get_ticks()
+                        pause_duration = pygame.time.get_ticks() - pause_started_at
+                        last_fall_time += pause_duration
+                        audio.resume_music()
 
                     elif pause_menu_rect.collidepoint(event.pos):
-                        menu.play_music()
+                        audio.play_sfx("button")
                         page = 'menu'
                         paused = False
+                        audio.play_music("menu")
+
+    if page == 'game' and game is not None:
+        if game.game_over and not game_over_music_started:
+            audio.play_music("game_over", loops=0)
+            game_over_music_started = True
 
     if page == 'game' and game is not None and not game.game_over and not paused:
 
@@ -226,6 +267,8 @@ while True:
         pygame.draw.rect(screen, (137, 180, 194), score_rect, width=1, border_radius=10)
         pygame.draw.rect(screen, (169, 196, 178), lines_rect, width=1, border_radius=10)
         pygame.draw.rect(screen, (185, 165, 204), next_rect, width=1, border_radius=10)
+        pygame.draw.rect(screen, panel, controls_rect, border_radius=10)
+        pygame.draw.rect(screen, (137, 180, 194), controls_rect, width=1, border_radius=10)
 
         game.draw(screen)
         
@@ -234,6 +277,13 @@ while True:
         screen.blit(next_surface, next_surface.get_rect(centerx=next_rect.centerx, y=240))
         screen.blit(lines_value_surface, lines_value_surface.get_rect(center=lines_rect.center))
         screen.blit(score_value_surface, score_value_surface.get_rect(center=score_rect.center))
+        screen.blit(controls_surface, controls_surface.get_rect(centerx=controls_rect.centerx, y=486))
+        screen.blit(move_surface, (340, 510))
+        screen.blit(rotate_surface, (340, 528))
+        screen.blit(accel_surface, (340, 546))
+        screen.blit(drop_surface, (340, 564))
+        screen.blit(pause_surface, (340, 582))
+        
 
         if game.game_over:
             overlay = pygame.Surface((500, 620), pygame.SRCALPHA)
